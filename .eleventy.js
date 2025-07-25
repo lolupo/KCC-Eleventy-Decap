@@ -1,7 +1,7 @@
 const yaml = require("js-yaml");
 const { DateTime } = require("luxon");
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
-const htmlmin = require("html-minifier");
+const { minify } = require("@minify-html/node");
 
 module.exports = function (eleventyConfig) {
   // Disable automatic use of your .gitignore
@@ -41,13 +41,19 @@ module.exports = function (eleventyConfig) {
   // Minify HTML
   eleventyConfig.addTransform("htmlmin", function (content, outputPath) {
     // Eleventy 1.0+: use this.inputPath and this.outputPath instead
-    if (outputPath.endsWith(".html")) {
-      let minified = htmlmin.minify(content, {
-        useShortDoctype: true,
-        removeComments: true,
-        collapseWhitespace: true,
-      });
-      return minified;
+    if (outputPath && outputPath.endsWith(".html")) {
+      try {
+        let minified = minify(Buffer.from(content), {
+          keep_spaces_between_attributes: true,
+          keep_comments: false,
+          minify_css: true,
+          minify_js: true,
+        });
+        return minified.toString();
+      } catch (err) {
+        console.log("Error minifying HTML: ", err);
+        return content;
+      }
     }
 
     return content;
